@@ -1,6 +1,6 @@
 package Authorize::Rule;
 {
-  $Authorize::Rule::VERSION = '0.001';
+  $Authorize::Rule::VERSION = '0.002';
 }
 # ABSTRACT: Rule-based authorization mechanism
 
@@ -146,7 +146,7 @@ Authorize::Rule - Rule-based authorization mechanism
 
 =head1 VERSION
 
-version 0.001
+version 0.002
 
 =head1 SYNOPSIS
 
@@ -157,7 +157,7 @@ A simple example:
             # Marge can do everything
             Marge => [ allow => '*' ],
 
-            # Homer can do everything except go to the kitchen
+            # Homer can do everything except use the oven
             Homer => [
                 deny  => ['oven'],
                 allow => '*',
@@ -361,12 +361,6 @@ Here we specify a list of people whose things we don't mind the dog ruining:
 More complicated structures (other than hashref of keys to string values)
 are currently not supported, though there are plans to add callbacks in
 order to allow the user to specify their own checks of conditions.
-
-=head1 ALPHA CODE
-
-I can't promise some of this won't change in the next few versions.
-
-Stay tuned.
 
 =head1 ATTRIBUTES
 
