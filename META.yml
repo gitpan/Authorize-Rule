@@ -2,17 +2,21 @@
 abstract: 'Rule-based authorization mechanism'
 author:
   - 'Sawyer X <xsawyerx@cpan.org>'
+  - 'Mickey Nasriachi <mickey@cpan.org>'
 build_requires:
-  Capture::Tiny: 0
   Data::Dumper: 0
+  File::Spec: 0
+  IO::Handle: 0
+  IPC::Open3: 0
   Module::Build: 0.3601
-  Test::More: 0.88
-  blib: 0
+  Test::Fatal: 0
+  Test::More: 0
+  perl: 5.006
 configure_requires:
   ExtUtils::MakeMaker: 6.30
   Module::Build: 0.3601
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 4.300035, CPAN::Meta::Converter version 2.131560'
+generated_by: 'Dist::Zilla version 5.015, CPAN::Meta::Converter version 2.131560'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,10 +26,11 @@ no_index:
   file:
     - README.pod
 requires:
+  Carp: 0
   List::Util: 0
   strict: 0
   warnings: 0
 resources:
   bugtracker: http://github.com/xsawyerx/authorize-rule/issues
   repository: http://github.com/xsawyerx/authorize-rule
-version: 0.002
+version: 0.003
