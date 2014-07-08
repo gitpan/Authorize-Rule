@@ -20,7 +20,7 @@ my %module_build_args = (
     "Mickey Nasriachi <mickey\@cpan.org>"
   ],
   "dist_name" => "Authorize-Rule",
-  "dist_version" => "0.003",
+  "dist_version" => "0.004",
   "license" => "perl",
   "module_name" => "Authorize::Rule",
   "recommends" => {},

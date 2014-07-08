@@ -1,6 +1,6 @@
 package Authorize::Rule;
 # ABSTRACT: Rule-based authorization mechanism
-$Authorize::Rule::VERSION = '0.003';
+$Authorize::Rule::VERSION = '0.004';
 use strict;
 use warnings;
 use Carp       'croak';
@@ -74,13 +74,20 @@ sub allowed {
             $ruleset_idx++;
 
             my $action = $self->match_ruleset( $ruleset, $req_params );
-            defined $action
-                and return {
+
+            if ( defined $action ) {
+                my %full_result = (
                     %result,
-                    action      => $action,
                     ruleset_idx => $ruleset_idx,
                   ( label       => $label        )x!! defined $label,
-                };
+                );
+
+                $full_result{'action'} = ref $action eq 'CODE'      ?
+                                         $action->( \%full_result ) :
+                                         $action;
+
+                return \%full_result;
+            }
 
             undef $label;
         }
@@ -97,16 +104,44 @@ sub match_ruleset {
     my ( $action, @rules ) = @{$ruleset}
         or return;
 
+    # an empty return() is a failure to match
+    # if matching of a rule succeeds, we just move to the next rule
     foreach my $rule (@rules) {
         if ( ref $rule eq 'HASH' ) {
             # check defined params by rule against requested params
             foreach my $key ( keys %{$rule} ) {
-                defined $req_params->{$key}
-                    or return; # no match
+                if ( defined $rule->{$key} ) {
+                    # check if key is missing
+                    defined $req_params->{$key}
+                        or return;
+                } else {
+                    # check the key exists and value is defined
+                    exists $req_params->{$key}
+                        and return;
 
-                $req_params->{$key} eq $rule->{$key}
-                    or return; # no match
+                    # don't continue checking the value in this case
+                    # because it's undefined
+                    next;
+                }
+
+                # check matching against a code reference
+                if ( ref $rule->{$key} eq 'CODE' ) {
+                    $req_params->{$key} eq $rule->{$key}->($req_params)
+                        or return;
+                } elsif ( ref $rule->{$key} eq 'Regexp' ) {
+                    $req_params->{$key} =~ $rule->{$key}
+                        or return;
+                } elsif ( ref $rule->{$key} ) {
+                    croak 'Rule keys can only be strings, regexps, or code';
+                } else {
+                    # check matching against a simple string
+                    $req_params->{$key} eq $rule->{$key}
+                        or return; # no match
+                }
             }
+        } elsif ( ref $rule eq 'CODE' ) {
+            $rule->($req_params)
+                or return;
         } elsif ( ! ref $rule ) {
             defined $req_params->{$rule}
                 or return; # no match
@@ -124,13 +159,15 @@ __END__
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 Authorize::Rule - Rule-based authorization mechanism
 
 =head1 VERSION
 
-version 0.003
+version 0.004
 
 =head1 SYNOPSIS
 
@@ -234,7 +271,7 @@ The general structure is:
     {
         ENTITY => {
             RESOURCE => [
-                OPTIONAL_LABEL => [ ACTION, RULE1, RULE2, ...RULE10 ],
+                OPTIONAL_LABEL => [ ACTION, RULE_1, RULE_2, ...RULE_N ],
             ]
         }
 
@@ -272,7 +309,8 @@ Traditionally these will be C<1> or C<0>:
         ...
     }
 
-Rules are read consecutively and as soon as a rule matches the matching stops.
+Rules are read consecutively and as soon as a rule matches the matching stops
+and the action value is returned.
 
 =head1 EXAMPLES
 
@@ -494,8 +532,11 @@ to allow by default if there is no match.
 
 =head2 rules
 
-A hash reference of your permissions, defined by the specification explained
+Rules can be either:
+- A hash reference of your permissions, defined by the specification explained
 above.
+- A key name (string) indicating this key must exist with no restriction to
+the value other than it must be defined.
 
 =head1 METHODS
 

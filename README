@@ -2,7 +2,7 @@ NAME
     Authorize::Rule - Rule-based authorization mechanism
 
 VERSION
-    version 0.003
+    version 0.004
 
 SYNOPSIS
     This is an extensive example, showing various options:
@@ -98,7 +98,7 @@ SPECIFICATION
         {
             ENTITY => {
                 RESOURCE => [
-                    OPTIONAL_LABEL => [ ACTION, RULE1, RULE2, ...RULE10 ],
+                    OPTIONAL_LABEL => [ ACTION, RULE_1, RULE_2, ...RULE_N ],
                 ]
             }
 
@@ -137,7 +137,7 @@ SPECIFICATION
         }
 
     Rules are read consecutively and as soon as a rule matches the matching
-    stops.
+    stops and the action value is returned.
 
 EXAMPLES
   All resources
@@ -349,8 +349,10 @@ ATTRIBUTES
         );
 
   rules
-    A hash reference of your permissions, defined by the specification
-    explained above.
+    Rules can be either: - A hash reference of your permissions, defined by
+    the specification explained above. - A key name (string) indicating this
+    key must exist with no restriction to the value other than it must be
+    defined.
 
 METHODS
   is_allowed

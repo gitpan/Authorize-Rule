@@ -10,8 +10,12 @@ dist.ini
 lib/Authorize/Rule.pm
 t/00-compile.t
 t/api/basic.t
+t/api/callback-action.t
+t/api/callback-keyval.t
+t/api/callback-rule.t
+t/api/empty-keys.t
+t/api/regex.t
 t/api/result_hashes.t
-t/callback.t
 t/eg1.t
 t/eg2.t
 t/eg3.t
