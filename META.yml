@@ -33,4 +33,4 @@ requires:
 resources:
   bugtracker: http://github.com/xsawyerx/authorize-rule/issues
   repository: http://github.com/xsawyerx/authorize-rule
-version: 0.004
+version: 0.005
