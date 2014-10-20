@@ -1,10 +1,9 @@
 package Authorize::Rule;
 # ABSTRACT: Rule-based authorization mechanism
-$Authorize::Rule::VERSION = '0.005';
+$Authorize::Rule::VERSION = '0.006';
 use strict;
 use warnings;
-use Carp       'croak';
-use List::Util 'first';
+use Carp 'croak';
 
 sub new {
     my $class = shift;
@@ -12,6 +11,48 @@ sub new {
 
     defined $opts{'rules'}
         or croak 'You must provide rules';
+
+    my $rules = $opts{'rules'};
+    ref($rules) eq 'HASH'
+        or croak 'attribute rules must be a hashref';
+
+    # expand entity groups to their entities
+    if ( $opts{'entity_groups'} ) {
+        ref( $opts{'entity_groups'} ) eq 'HASH'
+            or croak 'attribute entity_groups must be a hashref';
+
+        foreach my $group ( keys %{ $opts{'entity_groups'} } ) {
+            my @entities = @{ $opts{'entity_groups'}{$group} };
+
+            # is $group there?
+            my $group_rules = delete $rules->{$group}
+                or next;
+
+            foreach my $entity (@entities) {
+                $rules->{$entity} = $group_rules;
+            }
+        }
+    }
+
+    # expand resource groups to their entities
+    if ( $opts{'resource_groups'} ) {
+        ref( $opts{'resource_groups'} ) eq 'HASH'
+            or croak 'attribute resource_groups must be a hashref';
+
+        my %groups = %{ $opts{'resource_groups'} };
+        foreach my $entity ( keys %{$rules} ) {
+            my $entity_perms = $rules->{$entity};
+
+            foreach my $entity_group ( keys %{ $entity_perms } ) {
+                my $perms = delete $entity_perms->{$entity_group};
+
+                foreach my $src_group ( keys %groups ) {
+                    my @actual_groups = @{ $groups{$src_group} };
+                    $rules->{$entity}{$_} = $perms for @actual_groups;
+                }
+            }
+        }
+    }
 
     return bless {
         default => 0, # deny by default
@@ -23,6 +64,18 @@ sub default {
     my $self = shift;
     @_ and croak 'default() is a ro attribute';
     return $self->{'default'};
+}
+
+sub entity_groups {
+    my $self = shift;
+    @_ and croak 'entity_groups() is a ro attribute';
+    return $self->{'entity_groups'};
+}
+
+sub resource_groups {
+    my $self = shift;
+    @_ and croak 'resource_groups() is a ro attribute';
+    return $self->{'resource_groups'};
 }
 
 sub rules {
@@ -62,13 +115,13 @@ sub allowed {
         or return { %result, action => $default };
 
     foreach my $rulesets ( $main_ruleset, $def_ruleset ) {
-        my $ruleset_idx;
+        my $ruleset_idx = 0;
         my $label;
 
-        foreach my $ruleset ( @{$rulesets} ) {
+      R_SET: foreach my $ruleset ( @{$rulesets} ) {
             if ( ! ref $ruleset ) {
                 $label = $ruleset;
-                next;
+                next R_SET;
             }
 
             $ruleset_idx++;
@@ -79,7 +132,7 @@ sub allowed {
                 my %full_result = (
                     %result,
                     ruleset_idx => $ruleset_idx,
-                  ( label       => $label        )x!! defined $label,
+                  ( label       => $label        )x!! $label,
                 );
 
                 $full_result{'action'} = ref $action eq 'CODE'      ?
@@ -109,7 +162,7 @@ sub match_ruleset {
     foreach my $rule (@rules) {
         if ( ref $rule eq 'HASH' ) {
             # check defined params by rule against requested params
-            foreach my $key ( keys %{$rule} ) {
+          KEY: foreach my $key ( keys %{$rule} ) {
                 if ( defined $rule->{$key} ) {
                     # check if key is missing
                     defined $req_params->{$key}
@@ -121,7 +174,7 @@ sub match_ruleset {
 
                     # don't continue checking the value in this case
                     # because it's undefined
-                    next;
+                    next KEY;
                 }
 
                 # check matching against a code reference
@@ -167,7 +220,7 @@ Authorize::Rule - Rule-based authorization mechanism
 
 =head1 VERSION
 
-version 0.005
+version 0.006
 
 =head1 SYNOPSIS
 
@@ -196,9 +249,9 @@ This is an extensive example, showing various options:
             admin => {
                 '' => [
                     # the admin does *not* have a passwordless ssh key
-                    [ 1, { passwordless_ssh_key => undef } ] },
+                    [ 1, { passwordless_ssh_key => undef } ],
                 ],
-            }
+            },
 
             ceo => {
                 '' => [
@@ -250,6 +303,14 @@ This is an extensive example, showing various options:
                 Graphs => [ [1] ],
                 ''     => [ [0] ],
             },
+        },
+
+        entity_groups => {
+            sysadmins => [ qw<John Jim Goat> ],
+        },
+
+        resource_groups => {
+            Graphs => [ 'ThisGraphs', 'ThoseGraphs' ],
         },
     );
 
@@ -653,6 +714,48 @@ to allow by default if there is no match.
         default => -1, # to make sure it's the catch-all
         rules   => {...},
     );
+
+=head2 entity_groups
+
+Entity groups allow you to group entities onto their own label. This means
+you can set up multiple entities at the same time, while still matching
+them by the entity name instead of group name.
+
+    my $auth = Authorize::Rule->new(
+        rules => {
+            'My Group' => {
+                Desk => [ [1] ],
+            },
+        },
+
+        entity_groups => {
+            'My Group' => [ qw<Sawyer Mickey> ],
+        },
+    );
+
+    # OK
+    $auth->is_allowed( 'Sawyer', 'Desk' );
+
+=head2 resource_groups
+
+Resource groups allow you to group resources onto their own label, much
+like I<entity_groups>. You can set up multiple resources at the same time,
+while still matching them by the resource name instead of the group name.
+
+    my $auth = Authorize::Rule->new(
+        rules => {
+            Person => {
+                Home => [ [1] ],
+            },
+        },
+
+        resource_groups => {
+            Home => [ 'Bedroom', 'Living Room', ... ],
+        },
+    );
+
+    # OK
+    $auth->is_allowed( 'Person', 'Bedroom' );
 
 =head2 rules
 

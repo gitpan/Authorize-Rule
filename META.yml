@@ -8,15 +8,15 @@ build_requires:
   File::Spec: 0
   IO::Handle: 0
   IPC::Open3: 0
-  Module::Build: 0.3601
+  Module::Build: 0.28
   Test::Fatal: 0
   Test::More: 0
   perl: 5.006
 configure_requires:
-  ExtUtils::MakeMaker: 6.30
-  Module::Build: 0.3601
+  ExtUtils::MakeMaker: 0
+  Module::Build: 0.28
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 5.015, CPAN::Meta::Converter version 2.131560'
+generated_by: 'Dist::Zilla version 5.020, CPAN::Meta::Converter version 2.133380'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -27,10 +27,9 @@ no_index:
     - README.pod
 requires:
   Carp: 0
-  List::Util: 0
   strict: 0
   warnings: 0
 resources:
   bugtracker: http://github.com/xsawyerx/authorize-rule/issues
   repository: http://github.com/xsawyerx/authorize-rule
-version: 0.005
+version: 0.006

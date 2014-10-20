@@ -2,7 +2,7 @@ NAME
     Authorize::Rule - Rule-based authorization mechanism
 
 VERSION
-    version 0.005
+    version 0.006
 
 SYNOPSIS
     This is an extensive example, showing various options:
@@ -30,9 +30,9 @@ SYNOPSIS
                 admin => {
                     '' => [
                         # the admin does *not* have a passwordless ssh key
-                        [ 1, { passwordless_ssh_key => undef } ] },
+                        [ 1, { passwordless_ssh_key => undef } ],
                     ],
-                }
+                },
 
                 ceo => {
                     '' => [
@@ -84,6 +84,14 @@ SYNOPSIS
                     Graphs => [ [1] ],
                     ''     => [ [0] ],
                 },
+            },
+
+            entity_groups => {
+                sysadmins => [ qw<John Jim Goat> ],
+            },
+
+            resource_groups => {
+                Graphs => [ 'ThisGraphs', 'ThoseGraphs' ],
             },
         );
 
@@ -464,6 +472,47 @@ ATTRIBUTES
             default => -1, # to make sure it's the catch-all
             rules   => {...},
         );
+
+  entity_groups
+    Entity groups allow you to group entities onto their own label. This
+    means you can set up multiple entities at the same time, while still
+    matching them by the entity name instead of group name.
+
+        my $auth = Authorize::Rule->new(
+            rules => {
+                'My Group' => {
+                    Desk => [ [1] ],
+                },
+            },
+
+            entity_groups => {
+                'My Group' => [ qw<Sawyer Mickey> ],
+            },
+        );
+
+        # OK
+        $auth->is_allowed( 'Sawyer', 'Desk' );
+
+  resource_groups
+    Resource groups allow you to group resources onto their own label, much
+    like *entity_groups*. You can set up multiple resources at the same
+    time, while still matching them by the resource name instead of the
+    group name.
+
+        my $auth = Authorize::Rule->new(
+            rules => {
+                Person => {
+                    Home => [ [1] ],
+                },
+            },
+
+            resource_groups => {
+                Home => [ 'Bedroom', 'Living Room', ... ],
+            },
+        );
+
+        # OK
+        $auth->is_allowed( 'Person', 'Bedroom' );
 
   rules
     Rules can be either:
