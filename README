@@ -2,7 +2,7 @@ NAME
     Authorize::Rule - Rule-based authorization mechanism
 
 VERSION
-    version 0.006
+    version 0.007
 
 SYNOPSIS
     This is an extensive example, showing various options:

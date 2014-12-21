@@ -1,6 +1,6 @@
 package Authorize::Rule;
 # ABSTRACT: Rule-based authorization mechanism
-$Authorize::Rule::VERSION = '0.006';
+$Authorize::Rule::VERSION = '0.007';
 use strict;
 use warnings;
 use Carp 'croak';
@@ -22,15 +22,11 @@ sub new {
             or croak 'attribute entity_groups must be a hashref';
 
         foreach my $group ( keys %{ $opts{'entity_groups'} } ) {
-            my @entities = @{ $opts{'entity_groups'}{$group} };
-
-            # is $group there?
             my $group_rules = delete $rules->{$group}
                 or next;
 
-            foreach my $entity (@entities) {
-                $rules->{$entity} = $group_rules;
-            }
+            $rules->{$_} = $group_rules
+                for @{ $opts{'entity_groups'}{$group} };
         }
     }
 
@@ -39,18 +35,21 @@ sub new {
         ref( $opts{'resource_groups'} ) eq 'HASH'
             or croak 'attribute resource_groups must be a hashref';
 
-        my %groups = %{ $opts{'resource_groups'} };
+        # populate
         foreach my $entity ( keys %{$rules} ) {
-            my $entity_perms = $rules->{$entity};
+            foreach my $resource ( keys %{ $rules->{$entity} } ) {
+                my $in_rsrc = $opts{'resource_groups'}{$resource}
+                    or next;
 
-            foreach my $entity_group ( keys %{ $entity_perms } ) {
-                my $perms = delete $entity_perms->{$entity_group};
-
-                foreach my $src_group ( keys %groups ) {
-                    my @actual_groups = @{ $groups{$src_group} };
-                    $rules->{$entity}{$_} = $perms for @actual_groups;
-                }
+                $rules->{$entity}{$_} = $rules->{$entity}{$resource}
+                    for @{$in_rsrc};
             }
+        }
+
+        # delete
+        foreach my $entity ( keys %{$rules} ) {
+            delete $rules->{$entity}{$_}
+                for keys %{ $opts{'resource_groups'} };
         }
     }
 
@@ -220,7 +219,7 @@ Authorize::Rule - Rule-based authorization mechanism
 
 =head1 VERSION
 
-version 0.006
+version 0.007
 
 =head1 SYNOPSIS
 
